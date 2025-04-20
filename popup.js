@@ -24,16 +24,50 @@ let refreshIcon = null;
 function formatPrice(price, currency = 'USD') {
   if (!price && price !== 0) return 'N/A';
   
+  // If price is a string, extract the numeric value
+  let numericPrice;
+  if (typeof price === 'string') {
+    // Remove all non-numeric characters except dots and commas
+    const cleaned = price.replace(/[^\d.,]/g, '');
+    
+    if (cleaned.indexOf(',') > cleaned.indexOf('.')) {
+      // Format: 1,234.56 (US/UK format)
+      numericPrice = parseFloat(cleaned.replace(/,/g, ''));
+    } else if (cleaned.indexOf('.') > cleaned.indexOf(',')) {
+      // Format: 1.234,56 (European format)
+      numericPrice = parseFloat(cleaned.replace(/\./g, '').replace(',', '.'));
+    } else if (cleaned.indexOf(',') >= 0 && cleaned.indexOf('.') === -1) {
+      // Only has commas
+      if (cleaned.split(',').pop().length === 2) {
+        // Likely decimal separator (e.g., 1234,56)
+        numericPrice = parseFloat(cleaned.replace(',', '.'));
+      } else {
+        // Likely thousands separator (e.g., 1,234)
+        numericPrice = parseFloat(cleaned.replace(/,/g, ''));
+      }
+    } else {
+      // Simple case or only dots
+      numericPrice = parseFloat(cleaned);
+    }
+  } else {
+    numericPrice = parseFloat(price);
+  }
+  
+  // Check if we got a valid number
+  if (isNaN(numericPrice)) return 'N/A';
+  
   // Format based on currency
   switch (currency) {
     case 'GBP':
-      return `£${parseFloat(price).toFixed(2)}`;
+      return `£${numericPrice.toFixed(2)}`;
     case 'EUR':
-      return `€${parseFloat(price).toFixed(2)}`;
+      return `€${numericPrice.toFixed(2)}`;
     case 'JPY':
-      return `¥${Math.round(parseFloat(price))}`;
+      return `¥${Math.round(numericPrice)}`;
+    case 'INR':
+      return `₹${numericPrice.toFixed(2)}`;
     default:
-      return `$${parseFloat(price).toFixed(2)}`;
+      return `$${numericPrice.toFixed(2)}`;
   }
 }
 
@@ -406,7 +440,7 @@ function checkForMatches() {
     chrome.scripting.executeScript({
       target: { tabId: currentTab.id },
       function: extractProductInfo,
-      args: [isWhiskyExchange]
+      args: []
     }, (results) => {
       if (chrome.runtime.lastError) {
         console.error('Script execution failed:', chrome.runtime.lastError);
@@ -415,6 +449,7 @@ function checkForMatches() {
         return;
       }
       
+      console.log('Script execution results:', results);
       const bottleInfo = results[0]?.result;
       
       if (!bottleInfo || !bottleInfo.name) {
@@ -426,6 +461,8 @@ function checkForMatches() {
       // Add site information
       bottleInfo.site = new URL(currentTab.url).hostname;
       bottleInfo.url = currentTab.url;
+      
+      console.log('Extracted bottle info:', bottleInfo);
       
       // Display the detected bottle info
       displayBottleInfo(bottleInfo);
@@ -468,177 +505,138 @@ function checkForMatches() {
   });
 }
 
-// Function to extract product information (executed in the context of the tab)
-function extractProductInfo(isWhiskyExchange) {
-  // Helper to extract text content from selector
-  function extractText(selector) {
-    const element = document.querySelector(selector);
-    return element ? element.textContent.trim() : '';
-  }
-  
-  // Helper to extract price value
-  function extractPrice(selector) {
-    const priceText = extractText(selector);
-    console.log(`Raw price text: "${priceText}"`);
-    
-    if (!priceText) return null;
-    
-    // Return the raw price string for currency detection in the background
-    return priceText;
-  }
-  
-  // Helper to extract pattern from text
-  function extractPattern(text, pattern) {
-    const match = text.match(pattern);
-    return match ? match[1] : null;
-  }
-  
-  // Configuration for supported sites
-  const siteConfigs = {
-    'wine.com': {
-      titleSelector: '.pipName',
-      priceSelector: '.productPrice',
-      brandSelector: '.pipWinery',
-      descriptionSelector: '.pipDescription',
-      imageSelector: '.pipMasterImage img',
-      vintage: {
-        pattern: /(\d{4})/,
-        selector: '.pipName'
-      }
-    },
-    'thewhiskyexchange.com': {
-      titleSelector: '.product-main__name',
-      priceSelector: '.product-action__price',
-      brandSelector: '.product-main__subtitle a',
-      descriptionSelector: '.product-main__description',
-      imageSelector: '.product-main__image img',
-      age: {
-        pattern: /(\d+)\s*Year/i,
-        selector: '.product-main__name'
-      }
-    },
-    'totalwine.com': {
-      titleSelector: '.product-name',
-      priceSelector: '.price',
-      brandSelector: '.product-brand',
-      descriptionSelector: '.product-description',
-      imageSelector: '.product-img img',
-      vintage: {
-        pattern: /(\d{4})/,
-        selector: '.product-name'
-      }
-    },
-    'reservebar.com': {
-      titleSelector: '.product-title h1',
-      priceSelector: '.product-price',
-      brandSelector: '.product-vendor',
-      descriptionSelector: '.product-description',
-      imageSelector: '.product__media img',
-      age: {
-        pattern: /(\d+)\s*Year/i,
-        selector: '.product-title h1'
-      }
-    },
-    'default': {
-      titleSelector: 'h1',
-      priceSelector: '.price, [class*="price"], [id*="price"]',
-      brandSelector: '.brand, [class*="brand"], [itemprop="brand"]',
-      descriptionSelector: '.description, [class*="description"], [itemprop="description"]',
-      imageSelector: '.product-image img, [class*="product"] img',
-      vintage: {
-        pattern: /(\d{4})/,
-        selector: 'h1, .title, [class*="title"]'
+// Function to extract product information
+function extractProductInfo() {
+  try {
+    // Site-specific settings for product extraction
+    const SITE_SPECIFIC_SETTINGS = {
+      'thewhiskyexchange.com': {
+        currency: 'GBP',
+        selectors: {
+          productName: '.product-main__name',
+          productPrice: '.product-action__price',
+          productBrand: '.product-main__subtitle'
+        }
       },
-      age: {
-        pattern: /(\d+)\s*Year/i,
-        selector: 'h1, .title, [class*="title"]'
+      'whiskyexchange.com': {
+        currency: 'GBP',
+        selectors: {
+          productName: '.product-main__name',
+          productPrice: '.product-action__price',
+          productBrand: '.product-main__subtitle'
+        }
+      },
+      'unicornauctions.com': {
+        currency: 'USD',
+        selectors: {
+          productName: '.text-\\[1\\.5rem\\].font-black.mb-3',
+          productPrice: 'p.font-bold.mr-2',
+          productBrand: '.lot-description',
+        }
+      },
+      'sothebys.com': {
+        currency: 'USD',
+        selectors: {
+          productName: '[data-testid="lotTitle"]',
+          productPrice: '[data-testid="lotBidAmount"] p:last-child',
+          productBrand: '[data-testid="lotTitle"]'
+        }
       }
-    },
-    // Enhanced Whisky Exchange config
-    'thewhiskyexchange.com': {
-      name: ['.product-main__name', 'h1.product-main__name'],
-      price: ['.product-action__price', '.price'],
-      brand: ['.product-main__subtitle', '.product-main__data-item:first-child'],
-      description: ['.product-main__description', '.product-main__data-item']
-    },
-    'whiskyexchange.com': {
-      name: ['.product-main__name', 'h1.product-main__name'],
-      price: ['.product-action__price', '.price'],
-      brand: ['.product-main__subtitle', '.product-main__data-item:first-child'],
-      description: ['.product-main__description', '.product-main__data-item']
-    },
-  };
-  
-  // Try to detect the site configuration
-  const hostname = window.location.hostname;
-  let config = null;
-  
-  for (const site in siteConfigs) {
-    if (hostname.includes(site)) {
-      config = siteConfigs[site];
-      break;
-    }
-  }
-  
-  if (!config) {
-    console.log('No specific config for this site, using generic selectors');
-    // Use generic selectors as fallback
-    config = {
-      name: ['h1', '.product-title', '.product-name', '[data-testid="product-title"]'],
-      price: ['.price', '.product-price', '[data-testid="price"]'],
-      brand: ['.brand', '.manufacturer', '.vendor'],
-      description: ['.description', '.product-description', '[data-testid="product-description"]']
     };
+
+    // Debug function - kept for future debugging if needed
+    function debugLog(message, data = '') {
+      console.log(message, data);
+    }
+
+    // Helper to extract text content from selector
+    function extractText(selector) {
+      const element = document.querySelector(selector);
+      return element ? element.textContent.trim() : '';
+    }
+    
+    // Helper to extract raw price text (not parsed)
+    function extractRawPrice(selector) {
+      // Try all selectors if multiple are provided (comma-separated)
+      if (selector.includes(',')) {
+        const selectors = selector.split(',');
+        for (const sel of selectors) {
+          const element = document.querySelector(sel.trim());
+          if (element) {
+            return element.textContent.trim();
+          }
+        }
+        return null;
+      }
+      
+      const element = document.querySelector(selector);
+      if (!element) {
+        return null;
+      }
+      
+      // For Sotheby's specific handling
+      if (selector.includes('lotBidAmount')) {
+        // Try to get all text nodes directly
+        const textNodes = Array.from(element.childNodes)
+          .filter(node => node.nodeType === 3)
+          .map(node => node.textContent.trim())
+          .filter(text => text.length > 0);
+          
+        if (textNodes.length > 0) {
+          return textNodes[textNodes.length - 1];
+        }
+        
+        // Try paragraphs
+        const paragraphs = element.querySelectorAll('p');
+        if (paragraphs.length > 0) {
+          const lastP = paragraphs[paragraphs.length - 1];
+          return lastP.textContent.trim();
+        }
+      }
+      
+      return element.textContent.trim();
+    }
+
+    const hostname = window.location.hostname.replace('www.', '');
+    let domain = SITE_SPECIFIC_SETTINGS[hostname];
+
+    if (domain) {
+      const name = extractText(domain.selectors.productName);
+      const price = extractRawPrice(domain.selectors.productPrice);
+      const brand = extractText(domain.selectors.productBrand);
+      
+      return {
+        name,
+        price,
+        brand,
+        site: hostname,
+        expectedCurrency: domain.currency
+      };
+    }
+
+    // Generic extraction for other sites
+    const productName = extractText('h1') || 
+                       extractText('.product-title') || 
+                       extractText('.product-name');
+                        
+    const productPrice = extractRawPrice('.price') || 
+                        extractRawPrice('.product-price') || 
+                        extractRawPrice('[data-testid="price"]');
+                        
+    const productBrand = extractText('.brand') || 
+                        extractText('.manufacturer') || 
+                        extractText('.vendor');
+                          
+    return {
+      name: productName,
+      price: productPrice,
+      brand: productBrand,
+      site: hostname
+    };
+  } catch (error) {
+    console.error('Error in extractProductInfo:', error);
+    throw error;
   }
-  
-  // Extract product information using the config
-  let productName = '';
-  for (const selector of config.name) {
-    productName = extractText(selector);
-    if (productName) break;
-  }
-  
-  let productPrice = '';
-  for (const selector of config.price) {
-    productPrice = extractPrice(selector);
-    if (productPrice) break;
-  }
-  
-  let brandName = '';
-  for (const selector of config.brand) {
-    brandName = extractText(selector);
-    if (brandName) break;
-  }
-  
-  let description = '';
-  for (const selector of config.description) {
-    description = extractText(selector);
-    if (description) break;
-  }
-  
-  // Extract vintage/year if present in the product name
-  const vintage = extractPattern(productName, /(19|20)\d{2}/);
-  
-  // Extract age statement if present in the product name
-  const age = extractPattern(productName, /(\d+)\s*years?/i) || 
-              extractPattern(productName, /(\d+)\s*yo/i) ||
-              extractPattern(productName, /(\d+)\s*year\s*old/i);
-  
-  // Special handling for Whisky Exchange
-  if (isWhiskyExchange && productPrice) {
-    console.log(`Whisky Exchange detected: "${productPrice}"`);
-  }
-  
-  console.log(`Extracted product info: ${productName}, ${productPrice}, ${brandName}`);
-  
-  return {
-    name: productName,
-    price: productPrice,
-    brand: brandName,
-    description: description,
-    vintage: vintage,
-    age: age
-  };
 }
 
 // Function to refresh BAXUS data

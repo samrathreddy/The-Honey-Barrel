@@ -28,7 +28,7 @@ export function extractAge(name) {
 // Get BAXUS listings with pagination
 export async function fetchBaxusListings(from = 0, size = 1000) {
   try {
-    console.log(`Fetching BAXUS listings: from=${from}, size=${size}`);
+    
     
     // Create the URL with parameters
     const url = new URL(BAXUS_API_URL);
@@ -36,8 +36,7 @@ export async function fetchBaxusListings(from = 0, size = 1000) {
     url.searchParams.append('size', size);
     url.searchParams.append('listed', 'true');
     
-    // For debugging
-    console.log(`Request URL: ${url.toString()}`);
+    
     
     // Fetch with appropriate options
     const response = await fetch(url.toString(), {
@@ -56,12 +55,7 @@ export async function fetchBaxusListings(from = 0, size = 1000) {
     
     // Process the response
     const data = await response.json();
-    console.log(`BAXUS API returned ${data ? data.length : 0} items`);
     
-    if (data && data.length > 0) {
-      // Log a sample item for debugging
-      console.log('Sample item structure:', JSON.stringify(data[0], null, 2));
-    }
     
     // Return the processed data
     return {
@@ -78,7 +72,6 @@ export async function fetchBaxusListings(from = 0, size = 1000) {
 export async function processListings(listings, currencyModule) {
   const { fetchCurrencyRates, convertToUSD, extractNumericPrice } = currencyModule;
   
-  console.log(`Processing ${listings.length} listings...`);
   
   // Log sample of raw listings for debugging
   if (listings.length > 0) {
@@ -148,13 +141,6 @@ export async function processListings(listings, currencyModule) {
     }
   }));
   
-  // Log summary of processed data
-  console.log(`Total processed listings: ${processedListings.length}`);
-  console.log('Price range (USD):', {
-    min: Math.min(...processedListings.map(l => l.price).filter(p => p > 0)),
-    max: Math.max(...processedListings.map(l => l.price)),
-    avg: processedListings.reduce((sum, l) => sum + l.price, 0) / processedListings.length
-  });
   
   // Log product types distribution
   const types = {};
@@ -163,7 +149,6 @@ export async function processListings(listings, currencyModule) {
       types[l.spiritType] = (types[l.spiritType] || 0) + 1;
     }
   });
-  console.log('Spirit types distribution:', types);
   
   return processedListings;
 }
@@ -179,23 +164,18 @@ export async function loadAllBaxusListings(currencyModule) {
   baxusCache.isLoading = true;
   
   try {
-    // First request to get initial data
-    console.log('Making initial API request...');
+    // First request to get initial data console.log('Making initial API request...');
     const initialData = await fetchBaxusListings(0, 2000);
     const total = initialData.total || 0;
-    
-    console.log(`Initial data loaded: ${total} items`);
     
     // Add initial results to cache - store raw listings first
     let rawListings = initialData.listings || [];
     
-    console.log(`Loaded ${rawListings.length} total listings from BAXUS`);
     
     // Now process all the listings to extract the needed information
     baxusCache.listings = await processListings(rawListings, currencyModule);
     baxusCache.lastUpdated = Date.now();
     
-    console.log('BAXUS data loading complete');
   } catch (error) {
     console.error('Error loading all BAXUS listings:', error);
   } finally {
@@ -218,7 +198,6 @@ function prepareMatchingTerms(name) {
   // Extract first word for prioritized matching
   const firstWord = words.length > 0 ? words[0] : '';
   
-  console.log(`Extracted numbers for matching: ${numbers.join(', ')}`);
   
   return { words, firstWord, numbers };
 }
@@ -382,7 +361,6 @@ export async function findMatches(bottleInfo, siteUrl = '', currencyModule) {
   
   // 3. Prepare for matching by extracting key terms from bottle name
   const { words, firstWord, numbers } = prepareMatchingTerms(bottleInfo.name);
-  console.log(`First word for matching: "${firstWord}"`);
   console.log(`Key words for matching: ${words.join(', ')}`);
   
   // Add numbers to bottle info for matching
@@ -480,11 +458,11 @@ async function processPriceInformation(price, siteUrl, currencyUtils) {
 
 // Helper function to log bottle details
 function logBottleDetails(bottleInfo, siteUrl, priceInfo) {
-  console.log(`Finding matches for: ${bottleInfo.name}`);
-  console.log(`Site URL: ${siteUrl || 'Not provided'}`);
-  console.log(`Site Price: ${priceInfo.originalSitePrice} (Detected as ${priceInfo.sitePriceNumeric} ${priceInfo.targetCurrency})`);
-  console.log(`Formatted site price: ${priceInfo.sitePriceFormatted}`);
-  console.log(`Converted to USD: $${priceInfo.targetPrice.toFixed(2)}`);
+  // console.log(`Finding matches for: ${bottleInfo.name}`);
+  // console.log(`Site URL: ${siteUrl || 'Not provided'}`);
+  // console.log(`Site Price: ${priceInfo.originalSitePrice} (Detected as ${priceInfo.sitePriceNumeric} ${priceInfo.targetCurrency})`);
+  // console.log(`Formatted site price: ${priceInfo.sitePriceFormatted}`);
+  // console.log(`Converted to USD: $${priceInfo.targetPrice.toFixed(2)}`);
   if (bottleInfo.brand) console.log(`Brand: ${bottleInfo.brand}`);
   if (bottleInfo.vintage) console.log(`Vintage: ${bottleInfo.vintage}`);
   if (bottleInfo.age) console.log(`Age: ${bottleInfo.age}`);
@@ -572,7 +550,7 @@ function logTopMatchesWithNumbers(topMatches, addCurrencySymbol, formatPriceForC
       console.log(`- Site Price: ${listing.sitePrice}`);
       console.log(`- Difference: ${listing.priceDifference}`);
       if (listing.isCheaperThanSite) {
-        console.log(`  ★ SAVINGS: ${addCurrencySymbol(formatPriceForCurrency(listing.savingsAmount, listing.siteCurrency), listing.siteCurrency)} ★`);
+        console.log(` SAVINGS: ${addCurrencySymbol(formatPriceForCurrency(listing.savingsAmount, listing.siteCurrency), listing.siteCurrency)} ★`);
       }
     }
     

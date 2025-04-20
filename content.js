@@ -85,6 +85,22 @@ const SITE_SPECIFIC_SETTINGS = {
       productPrice: '.product-action__price',
       productBrand: '.product-main__subtitle'
     }
+  },
+  'unicornauctions.com': {
+    currency: 'USD',
+    selectors: {
+      productName: '.text-\\[1\\.5rem\\].font-black.mb-3',
+      productPrice: 'p.font-bold.mr-2',
+      productBrand: '.lot-description'
+    }
+  },
+  'sothebys.com': {
+    currency: 'USD',
+    selectors: {
+      productName: '[data-testid="lotTitle"]',
+      productPrice: '[data-testid="lotBidAmount"] p:last-child',
+      productBrand: '[data-testid="lotTitle"]'
+    }
   }
 };
 
@@ -119,7 +135,7 @@ function scrapeBottleInfo() {
   
   // Find the matching site config or use default
   const siteConfig = siteConfigs[hostname] || siteConfigs['default'];
-  
+  console.log('Site Config:', siteConfig);
   // Extract basic information
   const name = extractText(siteConfig.titleSelector);
   const price = extractPrice(siteConfig.priceSelector);
@@ -371,17 +387,20 @@ function scrapeBottleInfo() {
 // Main function to check if we're on a product page and find matches
 function checkForBottleMatches() {
   // Don't run on BAXUS own site
+  const hostname = window.location.hostname.replace('www.', '');
   if (window.location.hostname.includes('baxus.co')) return;
-  
+
   // Simple check if we're on a product page - look for price elements
   const priceElements = document.querySelectorAll('.price, [class*="price"], [id*="price"]');
-  if (priceElements.length === 0) return;
-  
+
+  if (SITE_SPECIFIC_SETTINGS[hostname] || priceElements.length === 0) return;
+  console.log('Checking for bottles');
   // Scrape bottle information
   const bottleInfo = scrapeBottleInfo();
   
   // Only proceed if we have at least a name
   if (!bottleInfo.name) return;
+  console.log('Bottle Info:', bottleInfo);  
   
   // Send message to background script to find matches
   chrome.runtime.sendMessage(
@@ -457,9 +476,8 @@ function extractProductInfo() {
   }
   
   // Check if we're on a known site
-  const hostname = window.location.hostname;
+  const hostname = window.location.hostname.replace('www.', '');
   let domain = '';
-  
   // Extract the domain for site-specific handling
   for (const site in SITE_SPECIFIC_SETTINGS) {
     if (hostname.includes(site)) {
@@ -467,7 +485,6 @@ function extractProductInfo() {
       break;
     }
   }
-  
   // If we have specific settings for this site, use them
   if (domain) {
     const settings = SITE_SPECIFIC_SETTINGS[domain];
@@ -518,7 +535,6 @@ window.addEventListener('load', () => {
   setTimeout(() => {
     const bottleInfo = extractProductInfo();
     
-    // Only send if we have a product name
     if (bottleInfo && bottleInfo.name) {
       console.log('Product detected:', bottleInfo);
       
@@ -532,6 +548,7 @@ window.addEventListener('load', () => {
           
           // If there are savings, show a notification
           const hasSavings = response.matches?.some(match => match.listing.isCheaperThanSite);
+          
           
           if (hasSavings) {
             // Create and show a notification UI element

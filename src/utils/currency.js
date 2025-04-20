@@ -17,6 +17,7 @@ export let currencyCache = {
     'HKD': 0.13,
     'SGD': 0.75,
     'MXN': 0.060,
+    'INR': 0.012,  // Added INR rate (1 INR = 0.012 USD)
   },
   lastUpdated: 0
 };
@@ -42,6 +43,9 @@ export const CURRENCY_SYMBOLS = {
   'S$': 'SGD',
   'MX$': 'MXN',
   '₹': 'INR',
+  'Rs': 'INR',
+  'Rs.': 'INR',
+  'INR': 'INR',
   '₽': 'RUB',
   'R$': 'BRL',
   '₩': 'KRW',
@@ -78,6 +82,14 @@ export const CURRENCY_PATTERNS = [
   { regex: /JPY\s*[\d,.]+/, currency: 'JPY' },
   { regex: /[\d,.]+\s*¥/, currency: 'JPY' },
   { regex: /[\d,.]+\s*JPY/i, currency: 'JPY' },
+
+  // INR patterns
+  { regex: /₹\s*[\d,.]+/, currency: 'INR' },
+  { regex: /Rs\.?\s*[\d,.]+/, currency: 'INR' },
+  { regex: /INR\s*[\d,.]+/, currency: 'INR' },
+  { regex: /[\d,.]+\s*₹/, currency: 'INR' },
+  { regex: /[\d,.]+\s*Rs\.?/, currency: 'INR' },
+  { regex: /[\d,.]+\s*INR/i, currency: 'INR' }
 ];
 
 // Domain-specific currency settings
