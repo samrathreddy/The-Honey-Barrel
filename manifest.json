@@ -16,15 +16,8 @@
       "128": "icons/icon128.png"
     }
   },
-  "permissions": [
-    "activeTab",
-    "storage",
-    "scripting"
-  ],
-  "host_permissions": [
-    "*://*/*",
-    "https://services.baxus.co/*"
-  ],
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": ["*://*/*", "https://services.baxus.co/*"],
   "background": {
     "service_worker": "src/background.js",
     "type": "module"
@@ -32,7 +25,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["src/content.js"]
     }
   ]
-} 
+}

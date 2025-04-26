@@ -225,17 +225,30 @@ export function extractNumericPrice(priceStr) {
   if (!priceStr) return 0;
   if (typeof priceStr === 'number') return priceStr;
   
-  // Special handling for Whisky Exchange format
-  const whiskyExchangePattern = /£([\d,.]+)(?:\s*\(\d+\.?\d*cl\))?/;
-  const whiskyExchangeMatch = priceStr.match(whiskyExchangePattern);
-  if (whiskyExchangeMatch) {
-    return parseFloat(whiskyExchangeMatch[1].replace(/,/g, ''));
-  }
   
   // Remove all non-numeric characters except dots and commas
   const cleaned = priceStr.replace(/[^\d.,]/g, '');
   
   let numeric;
+  
+  // Count occurrences of dots and commas
+  const dotCount = (cleaned.match(/\./g) || []).length;
+  const commaCount = (cleaned.match(/,/g) || []).length;
+  
+  // Handle simple decimal cases first (e.g., 10.45, 4.5)
+  if (dotCount === 1 && commaCount === 0) {
+    return parseFloat(cleaned);
+  }
+  
+  // Handle simple comma as decimal cases (e.g., 10,45)
+  if (dotCount === 0 && commaCount === 1) {
+    // Check if the comma appears to be a decimal separator
+    // (2 or fewer digits after comma)
+    const afterComma = cleaned.split(',')[1];
+    if (afterComma && afterComma.length <= 2) {
+      return parseFloat(cleaned.replace(',', '.'));
+    }
+  }
   
   if (cleaned.indexOf(',') > cleaned.indexOf('.')) {
     // Format: 1,234.56 (US/UK format)
@@ -245,15 +258,26 @@ export function extractNumericPrice(priceStr) {
     numeric = parseFloat(cleaned.replace(/\./g, '').replace(',', '.'));
   } else if (cleaned.indexOf(',') >= 0 && cleaned.indexOf('.') === -1) {
     // Only has commas
-    if (cleaned.split(',').pop().length === 2) {
+    const parts = cleaned.split(',');
+    if (parts[1] && parts[1].length === 2) {
       // Likely decimal separator (e.g., 1234,56)
       numeric = parseFloat(cleaned.replace(',', '.'));
     } else {
       // Likely thousands separator (e.g., 1,234)
       numeric = parseFloat(cleaned.replace(/,/g, ''));
     }
+  } else if (cleaned.indexOf('.') >= 0 && cleaned.indexOf(',') === -1) {
+    // Only has dots
+    const parts = cleaned.split('.');
+    if (parts[1] && parts[1].length === 2) {
+      // Likely decimal separator (e.g., 1234.56)
+      numeric = parseFloat(cleaned);
+    } else {
+      // Likely thousands separator (e.g., 1.234)
+      numeric = parseFloat(cleaned.replace(/\./g, ''));
+    }
   } else {
-    // Simple case or only dots
+    // No separators found, just parse the number
     numeric = parseFloat(cleaned);
   }
   

@@ -3,6 +3,7 @@
 // Import modules
 import * as currencyModule from './utils/currency.js';
 import * as baxusModule from './api/baxus.js';
+import * as config from './utils/config.js';
 
 // Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -184,6 +185,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     
     return true; // Indicates we'll respond asynchronously
+  }
+  if(message.action === 'getSiteSpecificSettings'){
+    try {
+      if(!config || !config.SITE_SPECIFIC_SETTINGS){
+        console.error('Site specific settings are unavailable:', { config });
+        sendResponse({ 
+          success: false, 
+          error: 'Site specific settings are unavailable',
+          debug: { hasConfig: !!config, configKeys: config ? Object.keys(config) : [] }
+        });
+        return true;
+      }
+      console.log('Sending site specific settings:', config.SITE_SPECIFIC_SETTINGS);
+      sendResponse({
+        success: true, 
+        SITE_SPECIFIC_SETTINGS: config.SITE_SPECIFIC_SETTINGS
+      });
+    } catch (error) {
+      console.error('Error getting site specific settings:', error);
+      sendResponse({ 
+        success: false, 
+        error: 'Error accessing site specific settings',
+        debug: { error: error.message }
+      });
+    }
+    return true;
+  }
+  if(message.action === 'formatPrice') {
+    const { price, currency } = message;
+    const currencySymbol = currencyModule.detectCurrency(price,currency);
+    const numericPrice = currencyModule.extractNumericPrice(price);
+    const formattedPrice = numericPrice.toLocaleString('en-US', {
+      style: 'currency',
+      currency: currencySymbol,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    sendResponse({ success: true, formattedPrice });
+    return true;
   }
   
   if (message.action === 'convertPrice') {

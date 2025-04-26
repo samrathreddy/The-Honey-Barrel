@@ -21,83 +21,19 @@ let currentBottleInfo = null;
 let refreshIcon = null;
 
 // Function to format price with currency
-function formatPrice(price, currency = 'USD') {
-  if (!price && price !== 0) return 'N/A';
+async function formatPrice(price, currency = 'USD') {
+  if (!price) return 'N/A';
   
-  // If price is a string, extract the numeric value
-  let numericPrice;
-  if (typeof price === 'string') {
-    // Remove all non-numeric characters except dots and commas
-    const cleaned = price.replace(/[^\d.,]/g, '');
-    
-    if (cleaned.indexOf(',') > cleaned.indexOf('.')) {
-      // Format: 1,234.56 (US/UK format)
-      numericPrice = parseFloat(cleaned.replace(/,/g, ''));
-    } else if (cleaned.indexOf('.') > cleaned.indexOf(',')) {
-      // Format: 1.234,56 (European format)
-      numericPrice = parseFloat(cleaned.replace(/\./g, '').replace(',', '.'));
-    } else if (cleaned.indexOf(',') >= 0 && cleaned.indexOf('.') === -1) {
-      // Only has commas
-      if (cleaned.split(',').pop().length === 2) {
-        // Likely decimal separator (e.g., 1234,56)
-        numericPrice = parseFloat(cleaned.replace(',', '.'));
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ action: 'formatPrice', price, currency }, (response) => {
+      if (response && response.success) {
+        console.log('Formatted price:', response.formattedPrice);
+        resolve(response.formattedPrice);
       } else {
-        // Likely thousands separator (e.g., 1,234)
-        numericPrice = parseFloat(cleaned.replace(/,/g, ''));
+        resolve('N/A');
       }
-    } else {
-      // Simple case or only dots
-      numericPrice = parseFloat(cleaned);
-    }
-  } else {
-    numericPrice = parseFloat(price);
-  }
-  
-  // Check if we got a valid number
-  if (isNaN(numericPrice)) return 'N/A';
-  
-  // Format based on currency
-  switch (currency) {
-    case 'GBP':
-      return `£${numericPrice.toFixed(2)}`;
-    case 'EUR':
-      return `€${numericPrice.toFixed(2)}`;
-    case 'JPY':
-      return `¥${Math.round(numericPrice)}`;
-    case 'INR':
-      return `₹${numericPrice.toFixed(2)}`;
-    default:
-      return `$${numericPrice.toFixed(2)}`;
-  }
-}
-
-// Function to calculate savings with currency
-function calculateSavings(originalPrice, newPrice, currency = 'USD') {
-  if (!originalPrice || !newPrice) return { amount: 0, percent: 0, formatted: 'N/A' };
-  
-  const amount = originalPrice - newPrice;
-  const percent = (amount / originalPrice) * 100;
-  
-  let formattedAmount = '';
-  switch (currency) {
-    case 'GBP':
-      formattedAmount = `£${amount.toFixed(2)}`;
-      break;
-    case 'EUR':
-      formattedAmount = `€${amount.toFixed(2)}`;
-      break;
-    case 'JPY':
-      formattedAmount = `¥${Math.round(amount)}`;
-      break;
-    default:
-      formattedAmount = `$${amount.toFixed(2)}`;
-  }
-  
-  return {
-    amount: amount.toFixed(2),
-    percent: percent.toFixed(0),
-    formatted: formattedAmount
-  };
+    });
+  });
 }
 
 // Function to set loading state
@@ -169,9 +105,12 @@ function displayBottleInfo(bottleInfo) {
   
   // Update the current product section
   productName.textContent = bottleInfo.name;
-  productPrice.textContent = formatPrice(bottleInfo.price, currency);
+  // Update price asynchronously
+  formatPrice(bottleInfo.price, currency).then(formattedPrice => {
+    productPrice.textContent = formattedPrice;
+  });
   productSite.textContent = `Source: ${bottleInfo.site || 'Unknown'}`;
-  
+  console.log('Product price:', productPrice.textContent);
   // Show the current product section
   currentProductSection.style.display = 'block';
   
@@ -327,8 +266,14 @@ function displayMatches(matches, transparency) {
     priceValue.style.fontSize = '18px';
     priceValue.style.fontWeight = 'bold';
     
-    // Use the localized price in site currency
-    priceValue.textContent = listing.siteLocalPrice || formatPrice(listing.price, siteCurrency);
+    // Use the localized price in site currency and update asynchronously
+    if (listing.siteLocalPrice) {
+      priceValue.textContent = listing.siteLocalPrice;
+    } else {
+      formatPrice(listing.price, siteCurrency).then(formattedPrice => {
+        priceValue.textContent = formattedPrice;
+      });
+    }
     
     // Show the site price with strikethrough if savings
     if (listing.sitePrice && hasSavings) {
@@ -433,15 +378,8 @@ function checkForMatches() {
       return;
     }
     
-    // Special handling for Whisky Exchange
-    const isWhiskyExchange = currentTab.url.includes('thewhiskyexchange.com') || 
-                              currentTab.url.includes('whiskyexchange.com');
-    
-    chrome.scripting.executeScript({
-      target: { tabId: currentTab.id },
-      function: extractProductInfo,
-      args: []
-    }, (results) => {
+    // Request product info from content script
+    chrome.tabs.sendMessage(currentTab.id, { action: 'extractProductInfo' }, (response) => {
       if (chrome.runtime.lastError) {
         console.error('Script execution failed:', chrome.runtime.lastError);
         setLoading(false);
@@ -449,10 +387,10 @@ function checkForMatches() {
         return;
       }
       
-      console.log('Script execution results:', results);
-      const bottleInfo = results[0]?.result;
+      console.log('Product info received:', response);
+      const bottleInfo = response;
       
-      if (!bottleInfo || !bottleInfo.name) {
+      if (!bottleInfo || !bottleInfo.name || bottleInfo.name === 'N/A') {
         setLoading(false);
         displayBottleInfo(null);
         return;
@@ -462,7 +400,7 @@ function checkForMatches() {
       bottleInfo.site = new URL(currentTab.url).hostname;
       bottleInfo.url = currentTab.url;
       
-      console.log('Extracted bottle info:', bottleInfo);
+      console.log('Processed bottle info:', bottleInfo);
       
       // Display the detected bottle info
       displayBottleInfo(bottleInfo);
@@ -503,140 +441,6 @@ function checkForMatches() {
       );
     });
   });
-}
-
-// Function to extract product information
-function extractProductInfo() {
-  try {
-    // Site-specific settings for product extraction
-    const SITE_SPECIFIC_SETTINGS = {
-      'thewhiskyexchange.com': {
-        currency: 'GBP',
-        selectors: {
-          productName: '.product-main__name',
-          productPrice: '.product-action__price',
-          productBrand: '.product-main__subtitle'
-        }
-      },
-      'whiskyexchange.com': {
-        currency: 'GBP',
-        selectors: {
-          productName: '.product-main__name',
-          productPrice: '.product-action__price',
-          productBrand: '.product-main__subtitle'
-        }
-      },
-      'unicornauctions.com': {
-        currency: 'USD',
-        selectors: {
-          productName: '.text-\\[1\\.5rem\\].font-black.mb-3',
-          productPrice: 'p.font-bold.mr-2',
-          productBrand: '.lot-description',
-        }
-      },
-      'sothebys.com': {
-        currency: 'USD',
-        selectors: {
-          productName: '[data-testid="lotTitle"]',
-          productPrice: '[data-testid="lotBidAmount"] p:last-child',
-          productBrand: '[data-testid="lotTitle"]'
-        }
-      }
-    };
-
-    // Debug function - kept for future debugging if needed
-    function debugLog(message, data = '') {
-      console.log(message, data);
-    }
-
-    // Helper to extract text content from selector
-    function extractText(selector) {
-      const element = document.querySelector(selector);
-      return element ? element.textContent.trim() : '';
-    }
-    
-    // Helper to extract raw price text (not parsed)
-    function extractRawPrice(selector) {
-      // Try all selectors if multiple are provided (comma-separated)
-      if (selector.includes(',')) {
-        const selectors = selector.split(',');
-        for (const sel of selectors) {
-          const element = document.querySelector(sel.trim());
-          if (element) {
-            return element.textContent.trim();
-          }
-        }
-        return null;
-      }
-      
-      const element = document.querySelector(selector);
-      if (!element) {
-        return null;
-      }
-      
-      // For Sotheby's specific handling
-      if (selector.includes('lotBidAmount')) {
-        // Try to get all text nodes directly
-        const textNodes = Array.from(element.childNodes)
-          .filter(node => node.nodeType === 3)
-          .map(node => node.textContent.trim())
-          .filter(text => text.length > 0);
-          
-        if (textNodes.length > 0) {
-          return textNodes[textNodes.length - 1];
-        }
-        
-        // Try paragraphs
-        const paragraphs = element.querySelectorAll('p');
-        if (paragraphs.length > 0) {
-          const lastP = paragraphs[paragraphs.length - 1];
-          return lastP.textContent.trim();
-        }
-      }
-      
-      return element.textContent.trim();
-    }
-
-    const hostname = window.location.hostname.replace('www.', '');
-    let domain = SITE_SPECIFIC_SETTINGS[hostname];
-
-    if (domain) {
-      const name = extractText(domain.selectors.productName);
-      const price = extractRawPrice(domain.selectors.productPrice);
-      const brand = extractText(domain.selectors.productBrand);
-      
-      return {
-        name,
-        price,
-        brand,
-        site: hostname,
-        expectedCurrency: domain.currency
-      };
-    }
-
-    // Generic extraction for other sites
-    const productName = extractText('h1') || 
-                       extractText('.product-title') || 
-                       extractText('.product-name');
-                        
-    const productPrice = extractRawPrice('.price') || 
-                        extractRawPrice('.product-price') || 
-                        extractRawPrice('[data-testid="price"]');
-                        
-    const productBrand = extractText('.brand') || 
-                        extractText('.manufacturer') || 
-                        extractText('.vendor');
-                          
-    return {
-      name: productName,
-      price: productPrice,
-      brand: productBrand,
-      site: hostname
-    };
-  } catch (error) {
-    console.error('Error in extractProductInfo:', error);
-    throw error;
-  }
 }
 
 // Function to refresh BAXUS data
