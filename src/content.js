@@ -2,6 +2,28 @@
 
 let SITE_SPECIFIC_SETTINGS = {};
 
+const CURRENCY_CODES_TO_SYMBOLS = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  AUD: 'A$',
+  CAD: 'C$',
+  CHF: 'Fr',
+  CNY: '元',
+  HKD: 'HK$',
+  SGD: 'S$',
+  MXN: 'MX$',
+  INR: '₹',
+  RUB: '₽',
+  BRL: 'R$',
+  KRW: '₩',
+  NZD: 'NZ$',
+  SEK: 'kr',
+  PLN: 'zł',
+  TRY: '₺'
+};
+
 // Function to get settings from background script
 async function getSiteSpecificSettings() {
   return new Promise((resolve) => {
@@ -372,10 +394,12 @@ function showSavingsNotification(savingsMatches, transparency) {
     justify-content: center;
   `;
   
+  console.log(listing)
   // Format the savings based on currency
-  const currencySymbol = isGBP ? '£' : siteCurrency === 'EUR' ? '€' : '$';
+  
+  const currencySymbol = CURRENCY_CODES_TO_SYMBOLS[listing.siteCurrency]
   const savingsAmount = listing.savingsAmount.toFixed(2);
-  const savingsPercent = Math.round(listing.savingsPercentage);
+  const savingsPercent = listing.savingsPercentage.toFixed(0);
   
   // Add check icon
   const checkIcon = document.createElement('span');
