@@ -164,12 +164,7 @@ function displayMatches(matches, transparency) {
     infoIcon.style.marginRight = '8px';
     infoIcon.style.color = '#0066cc';
     
-    const infoText = document.createElement('span');
-    infoText.textContent = `Showing prices in ${siteCurrency} based on current exchange rates`;
-    
-    currencyHeader.appendChild(infoIcon);
-    currencyHeader.appendChild(infoText);
-    recentContainer.appendChild(currencyHeader);
+
   }
   
   // Display all matches with savings first

@@ -1,12 +1,12 @@
 // BAXUS API Module
 
 // BAXUS API endpoint
-export const BAXUS_API_URL = 'https://services.baxus.co/api/search/listings';
+export const BAXUS_API_URL = 'https://services.baxus.co/api/search/listings?from=0&size=2000&listed=true';
 
 // Cache for BAXUS bottle data to minimize API calls
 export let baxusCache = {
   listings: [],
-  lastUpdated: 0,
+  lastUpdated: null,
   isLoading: false
 };
 
@@ -82,7 +82,7 @@ export async function processListings(listings, currencyModule) {
   }
   
   // Ensure we have up-to-date currency rates before processing
-  await fetchCurrencyRates();
+  await currencyModule.fetchCurrencyRates();
   
   // Process listings with Promise.all to handle async currency conversion
   const processedListings = await Promise.all(listings.map(async (item) => {
@@ -155,32 +155,68 @@ export async function processListings(listings, currencyModule) {
 
 // Load all BAXUS listings into cache
 export async function loadAllBaxusListings(currencyModule) {
-  if (baxusCache.isLoading) {
-    console.log('Already loading BAXUS data, skipping request');
+  try {
+    // Set loading state
+    baxusCache.isLoading = true;
+    
+    console.log('Loading BAXUS data...');
+    
+    // First ensure we have fresh currency rates
+    await currencyModule.fetchCurrencyRates();
+    
+    // Fetch the data
+    const response = await fetch(BAXUS_API_URL);
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+    console.log(response)
+    const data = await response.json();
+    console.log(`Loaded ${data.length} BAXUS listings`);
+    console.log(data)
+    
+    // Process and store listings
+    baxusCache.listings = await processListings(data,currencyModule)
+    baxusCache.lastUpdated = Date.now();
+    
+    console.log('BAXUS data loaded and processed successfully');
+    
+    // Update loading state
+    baxusCache.isLoading = false;
+    
+    return baxusCache.listings;
+  } catch (error) {
+    console.error('Error loading BAXUS data:', error);
+    
+    // Update loading state even on error
+    baxusCache.isLoading = false;
+    
+    throw error;
+  }
+}
+
+// Function to wait for BAXUS data to be loaded
+async function waitForBaxusData() {
+  // If data is already loaded and not loading, return immediately
+  if (baxusCache.listings.length > 0 && !baxusCache.isLoading) {
     return;
   }
   
-  console.log('Starting to load BAXUS listings...');
-  baxusCache.isLoading = true;
-  
-  try {
-    // First request to get initial data console.log('Making initial API request...');
-    const initialData = await fetchBaxusListings(0, 2000);
-    const total = initialData.total || 0;
-    
-    // Add initial results to cache - store raw listings first
-    let rawListings = initialData.listings || [];
-    
-    
-    // Now process all the listings to extract the needed information
-    baxusCache.listings = await processListings(rawListings, currencyModule);
-    baxusCache.lastUpdated = Date.now();
-    
-  } catch (error) {
-    console.error('Error loading all BAXUS listings:', error);
-  } finally {
-    baxusCache.isLoading = false;
+  // If it's currently loading, wait for it to complete
+  if (baxusCache.isLoading) {
+    console.log('Waiting for BAXUS data to finish loading...');
+    return new Promise(resolve => {
+      const checkInterval = setInterval(() => {
+        if (!baxusCache.isLoading) {
+          clearInterval(checkInterval);
+          console.log('BAXUS data loading complete, proceeding...');
+          resolve();
+        }
+      }, 100);
+    });
   }
+  
+  // If no data and not loading, return (will be handled by caller)
+  return;
 }
 
 // Helper function to prepare matching terms
@@ -322,6 +358,19 @@ async function scoreAndProcessMatches(listings, bottleInfo, words, firstWord, pr
 
 // Find potential matches for a product in BAXUS listings
 export async function findMatches(bottleInfo, siteUrl = '', currencyModule) {
+  console.log('===========================================');
+  console.log('Finding matches for:', bottleInfo.name);
+  console.log('===========================================');
+  
+  // Wait for BAXUS data to be fully loaded if it's in progress
+  await waitForBaxusData();
+
+  // Check for available listings
+  if (!baxusCache.listings || baxusCache.listings.length === 0) {
+    console.log('No BAXUS listings available for matching');
+    return [];
+  }
+  
   // 1. Extract currency utilities and validate inputs
   const { 
     fetchCurrencyRates, 
@@ -337,15 +386,6 @@ export async function findMatches(bottleInfo, siteUrl = '', currencyModule) {
   // Validate input bottle info
   if (!bottleInfo || !bottleInfo.name) {
     console.log('No valid bottle info provided for matching');
-    return [];
-  }
-  console.log('===========================================');
-  console.log('Bottle info:', bottleInfo);
-  console.log('===========================================');
-  
-  // Check for available listings
-  if (!baxusCache.listings || baxusCache.listings.length === 0) {
-    console.log('No BAXUS listings available for matching');
     return [];
   }
   
@@ -368,7 +408,7 @@ export async function findMatches(bottleInfo, siteUrl = '', currencyModule) {
   
   // 4. Get current currency rates for price comparison
   const rates = await fetchCurrencyRates();
-  
+  console.log(baxusCache.listings)
   // 5. Score and process matches
   const processedMatches = await scoreAndProcessMatches(
     baxusCache.listings,

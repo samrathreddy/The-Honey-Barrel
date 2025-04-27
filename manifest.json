@@ -27,5 +27,9 @@
       "matches": ["<all_urls>"],
       "js": ["src/content.js"]
     }
-  ]
+  ],
+  "web_accessible_resources": [{
+    "resources": ["icons/*"],
+    "matches": ["<all_urls>"]
+  }]
 }

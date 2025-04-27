@@ -2,6 +2,28 @@
 
 let SITE_SPECIFIC_SETTINGS = {};
 
+const CURRENCY_CODES_TO_SYMBOLS = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  AUD: 'A$',
+  CAD: 'C$',
+  CHF: 'Fr',
+  CNY: '元',
+  HKD: 'HK$',
+  SGD: 'S$',
+  MXN: 'MX$',
+  INR: '₹',
+  RUB: '₽',
+  BRL: 'R$',
+  KRW: '₩',
+  NZD: 'NZ$',
+  SEK: 'kr',
+  PLN: 'zł',
+  TRY: '₺'
+};
+
 // Function to get settings from background script
 async function getSiteSpecificSettings() {
   return new Promise((resolve) => {
@@ -217,16 +239,24 @@ function showSavingsNotification(savingsMatches, transparency) {
   `;
   
   // Add icon to title
-  const titleIcon = document.createElement('span');
+  const titleIcon = document.createElement('div');
+  titleIcon.className = 'honey-barrel-icon';
   titleIcon.innerHTML = `
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 8px;">
-      <path d="M12 3L4 7.5V16.5L12 21L20 16.5V7.5L12 3Z" stroke="#f7931e" stroke-width="2" fill="#f7931e" fill-opacity="0.2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M12 12L4 7.5" stroke="#f7931e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M12 12L20 7.5" stroke="#f7931e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M12 21V12" stroke="#f7931e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <img src="${chrome.runtime.getURL('icons/icon.svg')}" 
+         alt="The Honey Barrel" 
+         class="honey-barrel-logo"
+         style="
+           height: 100px;
+           width: 100px;
+           vertical-align: middle;
+           margin-right: 8px;
+           border-radius: 4px;
+         "
+    >
   `;
   title.prepend(titleIcon);
+  title.style.display = 'flex';
+  title.style.alignItems = 'center';
   title.append(document.createTextNode('The Honey Barrel'));
   
   const closeBtn = document.createElement('button');
@@ -372,10 +402,12 @@ function showSavingsNotification(savingsMatches, transparency) {
     justify-content: center;
   `;
   
+  console.log(listing)
   // Format the savings based on currency
-  const currencySymbol = isGBP ? '£' : siteCurrency === 'EUR' ? '€' : '$';
+  
+  const currencySymbol = CURRENCY_CODES_TO_SYMBOLS[listing.siteCurrency]
   const savingsAmount = listing.savingsAmount.toFixed(2);
-  const savingsPercent = Math.round(listing.savingsPercentage);
+  const savingsPercent = listing.savingsPercentage.toFixed(0);
   
   // Add check icon
   const checkIcon = document.createElement('span');
@@ -424,8 +456,6 @@ function showSavingsNotification(savingsMatches, transparency) {
       margin-top: 10px;
       font-style: italic;
     `;
-    conversionInfo.textContent = `Prices shown in ${siteCurrency} based on current exchange rates`;
-    content.appendChild(conversionInfo);
   }
   
   // Assemble the notification
