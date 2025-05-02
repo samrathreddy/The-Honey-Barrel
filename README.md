@@ -1,4 +1,6 @@
-# The Honey Barrel (BAXUS Marketplace Integration)
+# <img src="icons/icon.png" alt="icon" width="30" height="30" style="vertical-align:middle;" /> The Honey Barrel (BAXUS Marketplace Integration)
+
+A Chrome extension that revolutionizes how wine and spirits enthusiasts discover the best prices by seamlessly integrating with the BAXUS marketplace. This extension automatically identifies bottles on retail websites and finds matching listings on BAXUS, along with real-time currency conversion for international comparison, potentially saving users significant money on their purchases.
 
 ## Table of Contents
 
@@ -14,15 +16,14 @@
   - [Core Components](#core-components)
   - [Component Responsibilities](#component-responsibilities)
   - [BAXUS API Integration](#baxus-api-integration)
+  - [Currency Conversion API](#currency-conversion-api)
   - [Matching Algorithm](#matching-algorithm)
   - [Currency Handling](#currency-handling)
-- [Privacy & Security](#🔒Privacy--Security)
+- [Privacy & Security](#-🔒privacy-&-security)
 - [Data Management](#data-management)
 - [Contributing](#contributing)
 - [Acknowledgements](#-acknowledgements)
 - [Version History](#-version-history)
-
-A Chrome extension that revolutionizes how wine and spirits enthusiasts discover the best prices by seamlessly integrating with the BAXUS marketplace. This extension automatically identifies bottles on retail websites and finds matching listings on BAXUS, potentially saving users significant money on their purchases.
 
 ## 🌟 Key Features
 
@@ -188,6 +189,10 @@ honey-barrel/
   - `from`: Pagination start index
   - `size`: Number of results per page
   - `listed`: Filter for listed items only
+
+### Currency Conversion API
+
+- Base URL: `https://open.er-api.com/v6/latest/USD`
 
 #### Response Handling
 
@@ -355,6 +360,8 @@ For details on how data is managed, stored, and processed by this extension, ple
 
 - [BAXUS](https://baxus.co) for their marketplace API
 - The open-source community for various tools and libraries used in this project
+
+- [Currency conversion](https://open.er-api.com/) for currency conversion and comparison
 
 ---
 
