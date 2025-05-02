@@ -7,16 +7,14 @@ import * as config from './utils/config.js';
 
 // Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log(`Received message: ${message.action}`);
+  //console.log(`Received message: ${message.action}`);
   
   if (message.action === 'getMatches') {
     // Enhanced logging of price info from site
     console.log('Site product info received:', message.bottleInfo);
-    console.log(`Site price format: "${message.bottleInfo.price}"`);
     
     // Get the site URL from the sender
     const siteUrl = sender.tab ? sender.tab.url : '';
-    console.log(`Site URL: "${siteUrl}"`);
     
     // Special logging for The Whisky Exchange
     const isWhiskyExchange = siteUrl.includes('thewhiskyexchange.com') || siteUrl.includes('whiskyexchange.com');
@@ -84,8 +82,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sitePriceInfo.currency = currencyModule.getDomainDefaultCurrency(siteUrl);
       sitePriceInfo.detectedFormat = 'Domain Default';
     }
-    
-    console.log('Detected site price info:', sitePriceInfo);
     
     // Additional logging for conversion debugging
     if (sitePriceInfo.currency !== 'USD') {

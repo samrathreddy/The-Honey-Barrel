@@ -1,6 +1,6 @@
 export const SITE_SPECIFIC_SETTINGS = {
     'thewhiskyexchange.com': {
-      currency: 'GBP',
+      currency: 'USD',
       selectors: {
         productName: '.product-main__name',
         productPrice: '.product-action__price',
@@ -8,7 +8,7 @@ export const SITE_SPECIFIC_SETTINGS = {
       }
     },
     'whiskyexchange.com': {
-      currency: 'GBP',
+      currency: 'USD',
       selectors: {
         productName: '.product-main__name',
         productPrice: '.product-action__price',

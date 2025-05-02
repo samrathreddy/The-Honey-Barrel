@@ -56,9 +56,8 @@ async function extractProductInfo() {
     const hostname = window.location.hostname.replace('www.', '');
     const domain = SITE_SPECIFIC_SETTINGS[hostname];
     
-    console.log('Current SITE_SPECIFIC_SETTINGS:', SITE_SPECIFIC_SETTINGS);
+
     console.log('Extracting product info for:', hostname);
-    console.log('Domain specific settings:', domain);
 
     if (domain) {
       const name = extractText(domain.selectors.productName);
@@ -89,7 +88,7 @@ async function extractProductInfo() {
       extractText('.manufacturer') || 
       extractText('.vendor');
     
-    console.log('Extracted generic info:', { productName, productPrice, productBrand });
+    //console.log('Extracted generic info:', { productName, productPrice, productBrand });
                           
     return {
       name: productName,
@@ -131,13 +130,17 @@ async function checkForBottleMatches() {
   chrome.runtime.sendMessage(
     { action: 'getMatches', bottleInfo },
     response => {
-      console.log('')
+      console.log("Top 5 matches")
       if (response && response.success && response.matches) {
         const { matches, transparency } = response;
         console.log(matches)
+        console.log("Price Difference Raw")
+        console.log(matches[0].listing.priceDifferenceRaw)
         // Show notification if we have matches
-        if (matches.length > 0) {
+        if (matches.length > 0 && matches[0].listing.priceDifferenceRaw > 0) {
           showSavingsNotification(matches, transparency);
+        }else{
+          console.log('No discount found on baxus')
         }
       }
     }
@@ -242,7 +245,7 @@ function showSavingsNotification(savingsMatches, transparency) {
   const titleIcon = document.createElement('div');
   titleIcon.className = 'honey-barrel-icon';
   titleIcon.innerHTML = `
-    <img src="${chrome.runtime.getURL('icons/icon.svg')}" 
+    <img src="${chrome.runtime.getURL('icons/icon.png')}" 
          alt="The Honey Barrel" 
          class="honey-barrel-logo"
          style="

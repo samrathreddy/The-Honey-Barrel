@@ -1,5 +1,27 @@
 # The Honey Barrel (BAXUS Marketplace Integration)
 
+## Table of Contents
+
+- [Key Features](#-key-features)
+- [Getting Started](#-getting-started)
+  - [Installation](#installation)
+  - [Usage](#usage)
+- [Supported Websites](#-supported-websites)
+  - [Primary Supported Retailers](#primary-supported-retailers)
+  - [Browser Permissions](#browser-permissions)
+  - [Adding New Retailers](#adding-new-retailers)
+- [Technical Architecture](#-technical-architecture)
+  - [Core Components](#core-components)
+  - [Component Responsibilities](#component-responsibilities)
+  - [BAXUS API Integration](#baxus-api-integration)
+  - [Matching Algorithm](#matching-algorithm)
+  - [Currency Handling](#currency-handling)
+- [Privacy & Security](#🔒Privacy--Security)
+- [Data Management](#data-management)
+- [Contributing](#contributing)
+- [Acknowledgements](#-acknowledgements)
+- [Version History](#-version-history)
+
 A Chrome extension that revolutionizes how wine and spirits enthusiasts discover the best prices by seamlessly integrating with the BAXUS marketplace. This extension automatically identifies bottles on retail websites and finds matching listings on BAXUS, potentially saving users significant money on their purchases.
 
 ## 🌟 Key Features
@@ -17,11 +39,10 @@ A Chrome extension that revolutionizes how wine and spirits enthusiasts discover
   - Brand and vintage verification
   - Price similarity analysis
 
-- **Global Price Comparison**
+- **Global Currency Price Conversion**
 
   - Real-time currency conversion
   - Support for multiple currency formats
-  - Domain-based currency detection
   - Savings calculation and display
 
 - **User Interface**
@@ -32,21 +53,7 @@ A Chrome extension that revolutionizes how wine and spirits enthusiasts discover
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-- Node.js (v14 or higher)
-- Chrome Browser (latest version)
-- Git
-
 ### Installation
-
-#### From Chrome Web Store
-
-1. Visit the Chrome Web Store (link coming soon)
-2. Click "Add to Chrome"
-3. Follow the installation prompts
-
-#### Installation
 
 1. Clone this repository
    ```bash
@@ -72,21 +79,18 @@ The extension supports a wide range of wine and spirits retailers through optimi
 
 ### Primary Supported Retailers
 
-| Retailer            | Website                                                    | Features                                                                                            |
-| ------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Total Wine & More   | [totalwine.com](https://www.totalwine.com)                 | - Full product detection<br>- Price tracking<br>- Local store inventory<br>- Member pricing         |
-| Wine.com            | [wine.com](https://www.wine.com)                           | - Complete catalog support<br>- Steward-Ship pricing<br>- Vintage detection<br>- Rating integration |
-| Wine-Searcher       | [wine-searcher.com](https://www.wine-searcher.com)         | - Pro price history<br>- Market analysis<br>- Merchant comparison<br>- Global availability          |
-| The Whisky Exchange | [thewhiskyexchange.com](https://www.thewhiskyexchange.com) | - Batch number detection<br>- International shipping<br>- GBP conversion<br>- Auction integration   |
-| Master of Malt      | [masterofmalt.com](https://www.masterofmalt.com)           | - Dram pricing<br>- Tasting notes<br>- Special releases<br>- EU pricing                             |
-| K&L Wines           | [klwines.com](https://www.klwines.com)                     | - Futures pricing<br>- Coming soon alerts<br>- Local inventory<br>- Special orders                  |
-| Caskers             | [caskers.com](https://www.caskers.com)                     | - Member pricing<br>- Concierge service<br>- Limited releases<br>- Gift options                     |
-| ReserveBar          | [reservebar.com](https://www.reservebar.com)               | - Premium selections<br>- Corporate orders<br>- Gift services<br>- Same-day delivery                |
-| Flaviar             | [flaviar.com](https://www.flaviar.com)                     | - Member pricing<br>- Tasting boxes<br>- Exclusive releases<br>- Reviews integration                |
-| Sotheby's Wine      | [sothebyswine.com](https://www.sothebyswine.com)           | - Auction pricing<br>- Rare vintages<br>- Collection valuation<br>- Market trends                   |
-
-
-
+| Retailer            | Website                                                    |
+| ------------------- | ---------------------------------------------------------- |
+| Total Wine & More   | [totalwine.com](https://www.totalwine.com)                 |
+| Wine.com            | [wine.com](https://www.wine.com)                           |
+| Wine-Searcher       | [wine-searcher.com](https://www.wine-searcher.com)         |
+| The Whisky Exchange | [thewhiskyexchange.com](https://www.thewhiskyexchange.com) |
+| Master of Malt      | [masterofmalt.com](https://www.masterofmalt.com)           |
+| K&L Wines           | [klwines.com](https://www.klwines.com)                     |
+| Caskers             | [caskers.com](https://www.caskers.com)                     |
+| ReserveBar          | [reservebar.com](https://www.reservebar.com)               |
+| Flaviar             | [flaviar.com](https://www.flaviar.com)                     |
+| Sotheby's Wine      | [sothebyswine.com](https://www.sothebyswine.com)           |
 
 ### Browser Permissions
 
@@ -132,14 +136,12 @@ honey-barrel/
 │   ├── popup.html        # Extension popup interface
 │   └── popup.js         # Popup UI logic and interactions
 ├── icons/               # Extension icons and assets
-│   ├── icon-16.png     # Browser toolbar icon
-│   ├── icon-48.png     # Extension management icon
-│   └── icon-128.png    # Web store icon
+│   ├── icon.png         # Extension icon
+│
 ├── popup.html        # Extension popup interface
 │-── popup.js         # Popup UI logic and interactions
 ├── screenshots/        # Extension screenshots for documentation
 ├── .gitignore         # Git ignore configuration
-└── LICENSE           # MIT License file
 ```
 
 #### Component Responsibilities
@@ -328,6 +330,10 @@ The matching algorithm prioritizes exact matches on critical fields like brand n
 - Rate limiting compliance
 - No external tracking
 
+## Data Management
+
+For details on how data is managed, stored, and processed by this extension, please refer to [data management and privacy.md](./Data%20management%20and%20privacy.md).
+
 ### Contributing
 
 1. Fork the repository
@@ -344,10 +350,6 @@ The matching algorithm prioritizes exact matches on critical fields like brand n
    git push origin feature/amazing-feature
    ```
 5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgements
 

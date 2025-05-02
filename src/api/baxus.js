@@ -169,10 +169,10 @@ export async function loadAllBaxusListings(currencyModule) {
     if (!response.ok) {
       throw new Error(`API responded with status: ${response.status}`);
     }
-    console.log(response)
+    //console.log(response)
     const data = await response.json();
     console.log(`Loaded ${data.length} BAXUS listings`);
-    console.log(data)
+    //console.log(data)
     
     // Process and store listings
     baxusCache.listings = await processListings(data,currencyModule)
@@ -503,7 +503,7 @@ function logBottleDetails(bottleInfo, siteUrl, priceInfo) {
   // console.log(`Site Price: ${priceInfo.originalSitePrice} (Detected as ${priceInfo.sitePriceNumeric} ${priceInfo.targetCurrency})`);
   // console.log(`Formatted site price: ${priceInfo.sitePriceFormatted}`);
   // console.log(`Converted to USD: $${priceInfo.targetPrice.toFixed(2)}`);
-  if (bottleInfo.brand) console.log(`Brand: ${bottleInfo.brand}`);
+  //if (bottleInfo.brand) console.log(`Brand: ${bottleInfo.brand}`);
   if (bottleInfo.vintage) console.log(`Vintage: ${bottleInfo.vintage}`);
   if (bottleInfo.age) console.log(`Age: ${bottleInfo.age}`);
 }
