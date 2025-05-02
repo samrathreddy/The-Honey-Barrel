@@ -2,6 +2,18 @@
 
 A Chrome extension that revolutionizes how wine and spirits enthusiasts discover the best prices by seamlessly integrating with the BAXUS marketplace. This extension automatically identifies bottles on retail websites and finds matching listings on BAXUS, along with real-time currency conversion for international comparison, potentially saving users significant money on their purchases.
 
+## Demo Video
+
+<svg width="560" height="315">
+  <foreignObject width="560" height="315">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+      <iframe width="560" height="315" src="https://www.youtube.com/embed/Q47_XGDMp3E?autoplay=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+  </foreignObject>
+  <image href="https://img.youtube.com/vi/Q47_XGDMp3E/maxresdefault.jpg" width="560" height="315" />
+</svg>
+
+
 ## Table of Contents
 
 - [Key Features](#-key-features)
