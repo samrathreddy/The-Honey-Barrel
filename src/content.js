@@ -246,8 +246,8 @@ function showSavingsNotification(savingsMatches, transparency) {
          alt="The Honey Barrel" 
          class="honey-barrel-logo"
          style="
-           height: 100px;
-           width: 100px;
+           height: px;
+           width: 24px;
            vertical-align: middle;
            margin-right: 8px;
            border-radius: 4px;
