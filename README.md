@@ -4,15 +4,7 @@ A Chrome extension that revolutionizes how wine and spirits enthusiasts discover
 
 ## Demo Video
 
-<svg width="560" height="315">
-  <foreignObject width="560" height="315">
-    <div xmlns="http://www.w3.org/1999/xhtml">
-      <iframe width="560" height="315" src="https://www.youtube.com/embed/Q47_XGDMp3E?autoplay=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    </div>
-  </foreignObject>
-  <image href="https://img.youtube.com/vi/Q47_XGDMp3E/maxresdefault.jpg" width="560" height="315" />
-</svg>
-
+[![Watch the demo video](https://img.youtube.com/vi/Q47_XGDMp3E/maxresdefault.jpg)](https://www.youtube.com/watch?v=Q47_XGDMp3E)
 
 ## Table of Contents
 
